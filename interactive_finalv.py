@@ -6,39 +6,26 @@
 # The third part generates strain maps
 
 
-from os import remove, environ, path
+from os import remove, path
 import plotly.express as px
 from concurrent.futures import ProcessPoolExecutor
 from csv import writer
 from ctypes import c_double
 from hyperspy.api import load
-from math import ceil
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import cm
 from matplotlib import colors
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LinearLocator
 from multiprocessing import Array
-from numpy import sqrt, array, ndenumerate, arange, min, max, percentile, linspace, nonzero, zeros, around, \
-    unravel_index, argmax, mean
+from numpy import sqrt, array, ndenumerate, arange, percentile, linspace, zeros
 from numpy.ctypeslib import as_array
 from pandas import DataFrame
 from PIL import Image, ImageTk
 from pixstem.api import PixelatedSTEM
 from seaborn import heatmap
 import tkinter as tk
-from tkinter import font
-from scipy.signal.signaltools import wiener
-from scipy.ndimage import gaussian_filter
+from tkinter import filedialog
 from skimage.feature import match_template
-from skimage.restoration import denoise_nl_means, estimate_sigma
-
-# print("Loading modules...")
-# print(environ["DISPLAY"])
-# environ["DISPLAY"] = ":1"  # this line may or may not be needed depending on the system
-
-# print("Modules loaded.")
 
 file = None
 distances = None
@@ -47,7 +34,6 @@ curr_func = None
 
 
 def set_curr_func(func_name, current_file, s_values):
-    # global curr_func, file, single_values   # replaced global variable with passed through variables
     global curr_func
     curr_func = str(func_name)
     entry.delete(0, tk.END)
@@ -87,12 +73,13 @@ def get_entry(current_function):
         to_csv(entry.get())
 
 
-def load_file(filename=None):
+def load_file():
     global file
+    input_file = filedialog.askopenfilename()
     label1['text'] = label1['text'] + "Loading file...\n"
     root.update()
     try:
-        file = load(filename)
+        file = load(input_file)
         label1['text'] = label1['text'] + "File loaded.\n"
     except:
         label1['text'] = label1['text'] + "Error loading. Please check path and try again.\n"
@@ -219,8 +206,8 @@ def start_analysis(values=None):
             nonlocal analysis_method
             length = len(array(PixelatedSTEM(file.inav[25, 25])))
             mouse_xy = (int(event.x * length / 400), int(event.y * length / 400))  # get the mouse position from event
-            l['text'] = l['text'] + str(mouse_xy[0]) + " " + str(mouse_xy[1]) + "\n"
-            l['text'] = l['text'] + "Starting analysis...\n"
+            label1['text'] = label1['text'] + str(mouse_xy[0]) + " " + str(mouse_xy[1]) + "\n"
+            label1['text'] = label1['text'] + "Starting analysis...\n"
             r.update()
             analysis(mouse_xy, values, analysis_method)
             remove("temp.png")
@@ -484,10 +471,13 @@ if __name__ == "__main__":
     entry = tk.Entry(frame, font=('Calibri', 15))
     entry.place(relx=0.1, rely=0.9, relwidth=0.8, relheight=0.05)
 
+
+
     # Creating buttons for UI. The buttons change the current function to the button name.
     button = tk.Button(frame, text='Load File', bg='#620000', font=('Calibri', 30), highlightthickness=0, bd=0,
                        activebackground='#800000', activeforeground='#ffffff', 
-                       command=lambda: set_curr_func("load_file", file, single_values), pady=0.02, fg='#ffffff')
+                       command=lambda: load_file(), pady=0.02, fg='#ffffff')
+
     button.place(relx=0.42, rely=0.15, relwidth=0.16, relheight=0.05)
 
     button1 = tk.Button(frame, text='Start Analysis', bg='#620000', font=('Calibri', 30), highlightthickness=0, bd=0,
